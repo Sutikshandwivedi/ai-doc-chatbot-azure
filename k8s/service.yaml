@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-doc-chatbot-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: ai-doc-chatbot
+  ports:
+    - port: 80
+      targetPort: 5000
