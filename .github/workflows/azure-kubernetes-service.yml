@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_CONTAINER_REGISTRY: samacrdevops123             # ACR name only (no .azurecr.io)
+  AZURE_CONTAINER_REGISTRY: samacrdevops123   # ACR name only
   CONTAINER_NAME: myaiapp
   RESOURCE_GROUP: rg-azure-devops-aks
   CLUSTER_NAME: aks-devops-cluster
@@ -32,13 +32,19 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Build and Push Image to ACR
+      - name: Login to ACR
         run: |
-          az acr build \
-            --registry $AZURE_CONTAINER_REGISTRY \
-            --image $AZURE_CONTAINER_REGISTRY.azurecr.io/$CONTAINER_NAME:${{ github.sha }} \
-            --resource-group $RESOURCE_GROUP \
-            .
+          az acr login --name $AZURE_CONTAINER_REGISTRY
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t $AZURE_CONTAINER_REGISTRY.azurecr.io/$CONTAINER_NAME:${{ github.sha }} .
+
+      - name: Push Docker image
+        run: |
+          docker push \
+            $AZURE_CONTAINER_REGISTRY.azurecr.io/$CONTAINER_NAME:${{ github.sha }}
 
   deploy:
     name: Deploy to AKS
