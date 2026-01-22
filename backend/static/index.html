@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Doc Chatbot</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@500;600&display=swap");
+
+        :root {
+            --ink: #0b1626;
+            --muted: #5e6b7a;
+            --panel: #ffffff;
+            --panel-tint: #f5f7fb;
+            --border: #dfe6f1;
+            --brand: #0b4ddb;
+            --brand-strong: #083caa;
+            --accent: #12b76a;
+            --bg-1: #eaf1ff;
+            --bg-2: #f4f7fb;
+            --shadow: 0 30px 70px rgba(10, 24, 58, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(900px 520px at 12% -12%, rgba(11, 77, 219, 0.14), transparent 62%),
+                radial-gradient(600px 480px at 88% 8%, rgba(18, 183, 106, 0.18), transparent 58%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2));
+            min-height: 100vh;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .page {
+            width: min(1240px, 100%);
+            min-height: 100vh;
+            margin: 0 auto;
+            padding: 28px clamp(16px, 3vw, 32px) 36px;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 20px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 22px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            backdrop-filter: blur(8px);
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .brand-title {
+            font-family: "Space Grotesk", "Segoe UI", sans-serif;
+            font-size: 21px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .brand-subtitle {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 999px;
+            box-shadow: 0 0 0 4px rgba(18, 183, 106, 0.15);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(220px, 280px) 1fr;
+            gap: 20px;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar h2 {
+            margin: 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--muted);
+        }
+
+        .quick-actions {
+            display: grid;
+            gap: 12px;
+        }
+
+        .quick-card {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px;
+            background: linear-gradient(180deg, #ffffff, var(--panel-tint));
+        }
+
+        .quick-card strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .quick-card span {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .meta-stack {
+            display: grid;
+            gap: 12px;
+        }
+
+        .meta-card {
+            border-radius: 14px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: linear-gradient(180deg, #ffffff, var(--panel-tint));
+        }
+
+        .meta-card strong {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .meta-card span {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .chat-panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .chat-header {
+            padding: 18px 22px;
+            background: linear-gradient(120deg, rgba(11, 77, 219, 0.1), transparent);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chat-title span {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .chat-title strong {
+            font-size: 18px;
+        }
+
+        .pill {
+            font-size: 12px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(11, 95, 255, 0.1);
+            color: var(--brand-strong);
+            font-weight: 600;
+        }
+
+        .chat-box {
+            padding: 18px 22px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background:
+                linear-gradient(180deg, rgba(245, 247, 251, 0.6), transparent),
+                repeating-linear-gradient(135deg, transparent 0 18px, rgba(10, 22, 38, 0.02) 18px 20px);
+        }
+
+        .welcome {
+            border: 1px dashed rgba(11, 77, 219, 0.25);
+            background: rgba(11, 77, 219, 0.05);
+            border-radius: 16px;
+            padding: 16px;
+            color: var(--muted);
+        }
+
+        .welcome strong {
+            display: block;
+            color: var(--ink);
+            margin-bottom: 6px;
+        }
+
+        .message {
+            padding: 12px 14px;
+            border-radius: 14px;
+            max-width: 72%;
+            line-height: 1.4;
+            position: relative;
+            animation: float-in 0.25s ease-out;
+        }
+
+        .user {
+            align-self: flex-end;
+            background: rgba(11, 77, 219, 0.12);
+            border: 1px solid rgba(11, 77, 219, 0.2);
+        }
+
+        .bot {
+            align-self: flex-start;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 24px rgba(16, 22, 38, 0.1);
+        }
+
+        .chat-input {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            background: #fbfcff;
+        }
+
+        .chat-input input {
+            padding: 12px 14px;
+            font-size: 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            outline: none;
+            background: #ffffff;
+        }
+
+        .chat-input input:focus {
+            border-color: rgba(11, 77, 219, 0.5);
+            box-shadow: 0 0 0 3px rgba(11, 77, 219, 0.15);
+        }
+
+        .chat-input button {
+            padding: 0 18px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+            color: #ffffff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .chat-input button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px rgba(11, 77, 219, 0.25);
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 12px;
+            padding: 4px 6px;
+        }
+
+        .footer span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .divider {
+            width: 1px;
+            height: 12px;
+            background: var(--border);
+        }
+
+        @keyframes float-in {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                order: 2;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .chat-input {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-input button {
+                padding: 12px 18px;
+                width: 100%;
+            }
+
+            .message {
+                max-width: 100%;
+            }
+
+            .footer {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-title">AI Doc Chatbot</div>
+            <div class="brand-subtitle">Enterprise assistant for internal knowledge and document search</div>
+        </div>
+        <div class="status">
+            <span class="status-dot"></span>
+            Production ready
+        </div>
+    </header>
+
+    <main class="layout">
+        <aside class="sidebar">
+            <h2>Workspace</h2>
+            <div class="quick-actions">
+                <div class="quick-card">
+                    <strong>Policy Guidance</strong>
+                    <span>Summaries and compliance answers</span>
+                </div>
+                <div class="quick-card">
+                    <strong>Implementation Notes</strong>
+                    <span>Architecture, runbooks, and SOPs</span>
+                </div>
+                <div class="quick-card">
+                    <strong>Release Assurance</strong>
+                    <span>Validate changes and reduce risk</span>
+                </div>
+            </div>
+            <div>
+                <h2>Insights</h2>
+                <p class="hint">Responses are grounded on your indexed docs and recent tickets.</p>
+            </div>
+            <div class="meta-stack">
+                <div class="meta-card">
+                    <strong>Coverage</strong>
+                    <span>324 documents indexed across 8 sources</span>
+                </div>
+                <div class="meta-card">
+                    <strong>Security</strong>
+                    <span>Role-based access and audit logging enabled</span>
+                </div>
+            </div>
+        </aside>
+
+        <section class="chat-panel">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <strong>Conversation</strong>
+                    <span>Ask anything about your documentation</span>
+                </div>
+                <div class="pill">Secure Workspace</div>
+            </div>
+
+            <div class="chat-box" id="chatBox">
+                <div class="welcome">
+                    <strong>Welcome back.</strong>
+                    Start with a policy question, paste a doc link, or ask for a release summary.
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="Type a request or paste a document link..." />
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <span>AI Doc Chatbot</span>
+        <span>
+            <span>v1.0</span>
+            <span class="divider"></span>
+            <span>Powered by internal knowledge sources</span>
+        </span>
+    </footer>
+</div>
+
+<script>
+    function appendMessage(text, type) {
+        const chatBox = document.getElementById("chatBox");
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "message " + type;
+        messageDiv.innerText = text;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById("messageInput");
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        appendMessage(message, "user");
+        input.value = "";
+
+        // Call backend API
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+
+        // Show bot response
+        appendMessage(data.ai_response, "bot");
+    }
+
+    document.getElementById("messageInput").addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+</script>
+
+</body>
+</html>
